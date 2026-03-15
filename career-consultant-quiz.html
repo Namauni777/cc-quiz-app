@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>キャリアコンサルタント 学科試験 学習アプリ</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --primary: #4f46e5;
+    --primary-light: #818cf8;
+    --success: #10b981;
+    --danger: #ef4444;
+    --bg: #f8fafc;
+    --card: #ffffff;
+    --text: #1e293b;
+    --muted: #64748b;
+    --border: #e2e8f0;
+  }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', 'Hiragino Kaku Gothic ProN', sans-serif; min-height: 100vh; }
+
+  /* Header */
+  header { background: var(--primary); color: white; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(79,70,229,0.3); }
+  header h1 { font-size: 18px; font-weight: 700; }
+  .header-stats { display: flex; gap: 16px; font-size: 13px; opacity: 0.9; }
+  .header-stats span { background: rgba(255,255,255,0.15); padding: 4px 10px; border-radius: 20px; }
+
+  /* Main layout */
+  .container { max-width: 800px; margin: 0 auto; padding: 24px 16px; }
+
+  /* Top bar */
+  .top-bar { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+  select, button { font-family: inherit; font-size: 14px; cursor: pointer; border-radius: 8px; border: 1px solid var(--border); padding: 8px 14px; background: var(--card); color: var(--text); transition: all 0.2s; }
+  select:focus, button:focus { outline: 2px solid var(--primary); outline-offset: 2px; }
+  .btn-primary { background: var(--primary); color: white; border-color: var(--primary); font-weight: 600; }
+  .btn-primary:hover { background: #4338ca; }
+  .btn-secondary { background: var(--card); color: var(--muted); }
+  .btn-secondary:hover { background: var(--bg); }
+
+  /* Progress bar */
+  .progress-wrap { margin-bottom: 20px; }
+  .progress-label { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .progress-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--primary-light)); border-radius: 3px; transition: width 0.4s ease; }
+
+  /* Question card */
+  .q-card { background: var(--card); border-radius: 16px; padding: 28px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 16px; }
+  .q-meta { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+  .q-tag { font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 600; }
+  .q-tag.category { background: #ede9fe; color: var(--primary); }
+  .q-tag.difficulty-easy { background: #d1fae5; color: #065f46; }
+  .q-tag.difficulty-mid { background: #fef3c7; color: #92400e; }
+  .q-tag.difficulty-hard { background: #fee2e2; color: #991b1b; }
+  .q-num { font-size: 12px; color: var(--muted); margin-left: auto; }
+  .q-text { font-size: 17px; line-height: 1.7; font-weight: 500; margin-bottom: 24px; }
+
+  /* Options */
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .option { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; border: 2px solid var(--border); border-radius: 10px; cursor: pointer; transition: all 0.15s; background: var(--bg); }
+  .option:hover:not(.disabled) { border-color: var(--primary-light); background: #f5f3ff; }
+  .option.selected { border-color: var(--primary); background: #f5f3ff; }
+  .option.correct { border-color: var(--success); background: #ecfdf5; }
+  .option.wrong { border-color: var(--danger); background: #fef2f2; }
+  .option.disabled { cursor: default; }
+  .option-label { width: 28px; height: 28px; border-radius: 50%; background: var(--border); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; flex-shrink: 0; margin-top: 1px; }
+  .option.correct .option-label { background: var(--success); color: white; }
+  .option.wrong .option-label { background: var(--danger); color: white; }
+  .option.selected:not(.correct):not(.wrong) .option-label { background: var(--primary); color: white; }
+  .option-text { font-size: 15px; line-height: 1.5; }
+
+  /* Answer result */
+  .result-box { margin-top: 16px; padding: 16px; border-radius: 10px; font-size: 14px; line-height: 1.7; display: none; }
+  .result-box.correct { background: #ecfdf5; border: 1px solid #6ee7b7; color: #065f46; }
+  .result-box.wrong { background: #fef2f2; border: 1px solid #fca5a5; color: #991b1b; }
+  .result-box .result-title { font-weight: 700; font-size: 16px; margin-bottom: 6px; }
+  .result-box .explanation { color: #374151; }
+
+  /* Actions */
+  .actions { display: flex; gap: 12px; margin-top: 16px; justify-content: flex-end; }
+
+  /* Stats */
+  .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+  .stat-card { background: var(--card); border-radius: 12px; padding: 16px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .stat-num { font-size: 28px; font-weight: 800; color: var(--primary); }
+  .stat-label { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* Score screen */
+  .score-screen { background: var(--card); border-radius: 16px; padding: 40px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .score-circle { width: 140px; height: 140px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0 auto 24px; box-shadow: 0 8px 20px rgba(79,70,229,0.3); }
+  .score-circle .pct { font-size: 42px; font-weight: 800; }
+  .score-circle .pct-label { font-size: 13px; opacity: 0.85; }
+  .score-msg { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+  .score-sub { color: var(--muted); margin-bottom: 28px; }
+  .score-breakdown { display: flex; justify-content: center; gap: 32px; margin-bottom: 28px; }
+  .score-item { text-align: center; }
+  .score-item .num { font-size: 24px; font-weight: 700; }
+  .score-item .lbl { font-size: 12px; color: var(--muted); }
+  .score-item.ok .num { color: var(--success); }
+  .score-item.ng .num { color: var(--danger); }
+
+  /* Responsive */
+  @media (max-width: 520px) {
+    .q-text { font-size: 15px; }
+    .option-text { font-size: 14px; }
+    .stats-grid { grid-template-columns: repeat(3, 1fr); }
+    .stat-num { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📚 キャリアコンサルタント 学科試験</h1>
+  <div class="header-stats">
+    <span id="hdr-score">正解: 0</span>
+    <span id="hdr-streak">🔥 0連続</span>
+  </div>
+</header>
+
+<div class="container">
+  <!-- Top bar -->
+  <div class="top-bar">
+    <select id="category-select">
+      <option value="all">すべての分野</option>
+      <option value="theory">キャリア理論</option>
+      <option value="counseling">カウンセリング理論</option>
+      <option value="labor">労働法規・社会保障</option>
+      <option value="practice">実践・アセスメント</option>
+      <option value="policy">職業・教育政策</option>
+    </select>
+    <select id="mode-select">
+      <option value="quiz">通常モード</option>
+      <option value="weak">苦手問題のみ</option>
+      <option value="random">ランダム</option>
+    </select>
+    <button class="btn-primary" onclick="startQuiz()">▶ スタート</button>
+    <button class="btn-secondary" onclick="showStats()">📊 成績</button>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-num" id="stat-total">0</div>
+      <div class="stat-label">回答済み</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="stat-correct" style="color:#10b981">0</div>
+      <div class="stat-label">正解数</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="stat-rate">-</div>
+      <div class="stat-label">正答率</div>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-wrap" id="progress-wrap" style="display:none">
+    <div class="progress-label">
+      <span id="prog-label">問題 1 / 10</span>
+      <span id="prog-pct">0%</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+  </div>
+
+  <!-- Quiz area -->
+  <div id="quiz-area"></div>
+</div>
+
+<script>
+// ===================== 問題データ =====================
+const questions = [
+  // ── キャリア理論 ──
+  {
+    id: 1, category: 'theory', difficulty: 'easy',
+    text: 'スーパー（Super, D.E.）のライフ・スパン・ライフ・スペース理論において、職業的発達段階の順序として正しいものはどれか。',
+    options: ['成長→探索→確立→維持→解放（下降）', '探索→成長→確立→維持→解放（下降）', '成長→確立→探索→維持→解放（下降）', '探索→確立→成長→維持→解放（下降）'],
+    answer: 0,
+    explanation: 'スーパーの発達段階は「成長期（0〜14歳）→探索期（15〜24歳）→確立期（25〜44歳）→維持期（45〜64歳）→解放（下降）期（65歳〜）」の順です。'
+  },
+  {
+    id: 2, category: 'theory', difficulty: 'mid',
+    text: 'ホランド（Holland, J.L.）の職業選択理論で定義される6つの職業的パーソナリティタイプとして、誤っているものはどれか。',
+    options: ['現実的（R）・研究的（I）・芸術的（A）', '社会的（S）・企業的（E）・慣習的（C）', '分析的（A）・管理的（M）・技術的（T）', 'RIASECモデルとも呼ばれる'],
+    answer: 2,
+    explanation: 'ホランドの6タイプはR（現実的）・I（研究的）・A（芸術的）・S（社会的）・E（企業的）・C（慣習的）で、RIASECと略されます。「分析的・管理的・技術的」は誤りです。'
+  },
+  {
+    id: 3, category: 'theory', difficulty: 'mid',
+    text: 'クランボルツ（Krumboltz, J.D.）の「計画された偶発性理論（Planned Happenstance Theory）」において、偶然の出来事をキャリアに活かすために必要なスキルに含まれないものはどれか。',
+    options: ['好奇心（Curiosity）', '持続性（Persistence）', '楽観性（Optimism）', '計画性（Planning）'],
+    answer: 3,
+    explanation: 'クランボルツの5つのスキルは①好奇心②持続性③柔軟性④楽観性⑤冒険心（リスクテイキング）です。「計画性」は含まれません。偶発的な機会を活かすことを重視する理論です。'
+  },
+  {
+    id: 4, category: 'theory', difficulty: 'hard',
+    text: 'サビカス（Savickas, M.L.）のキャリア構成理論（Career Construction Theory）の中核概念として正しいものはどれか。',
+    options: ['キャリア適応性（Career Adaptability）・ライフテーマ・キャリアストーリー', 'キャリアアンカー・職務充実・自己実現', '職業的アイデンティティ・強化・モデリング', 'キャリア発達・探索行動・職業的自己概念'],
+    answer: 0,
+    explanation: 'サビカスのキャリア構成理論は、①キャリア適応性（関心・統制・好奇心・自信の4次元）②ライフテーマ③キャリアストーリーを中核とし、主観的・構成主義的アプローチを取ります。'
+  },
+  {
+    id: 5, category: 'theory', difficulty: 'easy',
+    text: 'シャイン（Schein, E.H.）のキャリアアンカー理論について、キャリアアンカーの説明として最も適切なものはどれか。',
+    options: ['その人が何を最も大切にするかという価値観・欲求・才能の組み合わせ', '職業選択時における外部環境の制約要因', '職業適性検査によって測定されるパーソナリティの分類', '生涯を通じて変化し続けるキャリアの方向性'],
+    answer: 0,
+    explanation: 'キャリアアンカーとは、個人が持つ「才能・能力」「動機・欲求」「価値観」の組み合わせで、キャリアの拠り所となる最も手放せないもの。8つのカテゴリーがあり、成人後は比較的安定します。'
+  },
+  {
+    id: 6, category: 'theory', difficulty: 'mid',
+    text: 'ジェラット（Gelatt, H.B.）の「積極的不確実性（Positive Uncertainty）」の考え方として正しいものはどれか。',
+    options: ['不確実性を肯定的に受け入れ、柔軟で創造的な意思決定を行う', '確実な情報のみに基づいて合理的な意思決定を行う', '将来の目標を明確に設定し、逆算してキャリアを計画する', '偶然の出来事を排除し、計画的なキャリア形成を目指す'],
+    answer: 0,
+    explanation: '積極的不確実性とは、変化の激しい現代において不確実性を前向きに受け入れ、直感や感情も活用しながら柔軟に意思決定する考え方。非合理的・非直線的な意思決定を肯定します。'
+  },
+  {
+    id: 7, category: 'theory', difficulty: 'hard',
+    text: 'レビンソン（Levinson, D.J.）の成人発達理論における「ライフ構造（Life Structure）」の定義として正しいものはどれか。',
+    options: ['特定の時期における個人の生活の基本パターンや設計', '職業的発達段階における役割の総体', '家族・職業・地域社会との関係性の強度', '自己概念と職業イメージの一致度'],
+    answer: 0,
+    explanation: 'ライフ構造とは、ある時期における個人の生活の基本パターン・設計のこと。重要な役割（仕事・家族等）がどう配置されるかを示します。約25年ごとの「安定期」と「過渡期」が交互に現れます。'
+  },
+
+  // ── カウンセリング理論 ──
+  {
+    id: 8, category: 'counseling', difficulty: 'easy',
+    text: 'ロジャーズ（Rogers, C.R.）が提唱したパーソンセンタード・アプローチにおける、カウンセラーの基本的態度として正しい組み合わせはどれか。',
+    options: ['無条件の肯定的関心・共感的理解・自己一致（純粋性）', '解釈・直面化・明確化', '強化・消去・モデリング', '分析・解釈・抵抗の処理'],
+    answer: 0,
+    explanation: 'ロジャーズの3条件は①無条件の肯定的関心（受容）②共感的理解（正確な共感）③自己一致（真実性・純粋性）です。これがカウンセリング関係の必要にして十分な条件とされます。'
+  },
+  {
+    id: 9, category: 'counseling', difficulty: 'mid',
+    text: '認知行動療法（CBT）の基本的な考え方として最も適切なものはどれか。',
+    options: ['出来事への認知（解釈）が感情・行動に影響するため、認知の修正を通じて問題を解決する', '無意識の葛藤を意識化することで心理的問題を解決する', '現在の人間関係パターンを探索することで自己成長を促す', '行動の強化・消去のみによって問題行動を修正する'],
+    answer: 0,
+    explanation: 'CBTはベックが体系化。「出来事→認知（自動思考）→感情・行動」という流れを重視し、非合理的・歪んだ認知（認知の歪み）を修正することで感情・行動の変容を目指します。'
+  },
+  {
+    id: 10, category: 'counseling', difficulty: 'mid',
+    text: 'マイクロカウンセリング（アイビー, Ivey, A.E.）における「基本的傾聴技法」に含まれないものはどれか。',
+    options: ['開かれた質問', '閉じた質問', '直面化', '感情の反映'],
+    answer: 2,
+    explanation: '基本的傾聴技法には①開かれた質問②閉じた質問③励ましと言い換え④感情の反映⑤意味の反映⑥要約が含まれます。「直面化」は基本的傾聴技法ではなく、より積極的な技法（積極技法）に分類されます。'
+  },
+  {
+    id: 11, category: 'counseling', difficulty: 'hard',
+    text: 'ナラティブ・アプローチにおける「ドミナント・ストーリー」と「オルタナティブ・ストーリー」の説明として正しいものはどれか。',
+    options: ['ドミナント：問題に満ちた支配的な物語 / オルタナティブ：本人の強みや例外が語られる新しい物語', 'ドミナント：過去の成功体験 / オルタナティブ：将来の目標像', 'ドミナント：無意識の抑圧された記憶 / オルタナティブ：意識化された感情', 'ドミナント：社会的役割期待 / オルタナティブ：個人的欲求'],
+    answer: 0,
+    explanation: 'ナラティブ・セラピー（ホワイト＆エプストン）では、クライエントが問題に支配されたドミナント・ストーリーを「外在化」し、例外・ユニークな結末を探ることでオルタナティブ・ストーリーを共同構築します。'
+  },
+  {
+    id: 12, category: 'counseling', difficulty: 'easy',
+    text: 'グループカウンセリングにおけるヤーロム（Yalom, I.D.）の「治療的因子（Therapeutic Factors）」に含まれないものはどれか。',
+    options: ['普遍性（自分だけではないという気づき）', '情報の伝達', '向社会的行動の強化', '希望の鼓舞'],
+    answer: 2,
+    explanation: 'ヤーロムの11の治療的因子には①希望の鼓舞②普遍性③情報の伝達④愛他主義⑤初期家族関係の修正的再現⑥社会適応技術の発達⑦行動模倣⑧対人学習⑨集団凝集性⑩カタルシス⑪実存的因子が含まれます。「向社会的行動の強化」は含まれません。'
+  },
+
+  // ── 労働法規・社会保障 ──
+  {
+    id: 13, category: 'labor', difficulty: 'easy',
+    text: '労働基準法における法定労働時間として正しいものはどれか。',
+    options: ['1日8時間・1週40時間', '1日8時間・1週44時間', '1日9時間・1週40時間', '1日7時間・1週35時間'],
+    answer: 0,
+    explanation: '労働基準法第32条により、法定労働時間は1日8時間・1週40時間（一部事業は44時間）。これを超える場合は三六協定（36協定）の締結と届出が必要です。'
+  },
+  {
+    id: 14, category: 'labor', difficulty: 'mid',
+    text: '雇用保険の基本手当（失業給付）の受給要件として正しいものはどれか。',
+    options: ['離職前2年間に被保険者期間が通算12ヶ月以上あること（特定受給資格者等は1年間に6ヶ月以上）', '離職前1年間に被保険者期間が通算6ヶ月以上あること', '離職前3年間に被保険者期間が通算24ヶ月以上あること', '被保険者期間は問わず、ハローワークへの求職申込みのみで受給可能'],
+    answer: 0,
+    explanation: '基本手当の受給要件は、原則として「離職前2年間に被保険者期間12ヶ月以上」。倒産・解雇等の特定受給資格者・特定理由離職者は「1年間に6ヶ月以上」で受給可能です。'
+  },
+  {
+    id: 15, category: 'labor', difficulty: 'mid',
+    text: '男女雇用機会均等法において、セクシュアルハラスメントの防止に関する事業主の措置義務について正しいものはどれか。',
+    options: ['雇用管理上必要な措置を講じる義務があり、同性間や男性被害のケースも対象となる', '女性従業員の被害に限り、措置義務が発生する', '措置義務はあくまで努力義務であり、罰則はない', '派遣労働者は対象外である'],
+    answer: 0,
+    explanation: '均等法11条により、事業主はセクハラ防止の雇用管理上の措置義務を負います。2007年改正で男性被害・同性間も対象となりました。派遣先も対象です。'
+  },
+  {
+    id: 16, category: 'labor', difficulty: 'hard',
+    text: '職業能力開発促進法に基づく「ジョブ・カード制度」の説明として正しいものはどれか。',
+    options: ['キャリアの棚卸しや職業能力の見える化のための様式で、就職活動・キャリアコンサルティング・職業訓練等に活用される', '企業が従業員の職務内容を記述するために国が定めた統一書式である', '有効期間は5年で、更新手続きが必要な公的資格証明書である', 'ハローワーク専用のシステムで、一般の就職活動では使用できない'],
+    answer: 0,
+    explanation: 'ジョブ・カードは①キャリアの棚卸し（生活・職業経験等）②職業能力の見える化（職務経歴・学習歴・免許等）を目的とした様式群。就活・転職・職業訓練・キャリアコンサルティング等で幅広く活用されます。'
+  },
+  {
+    id: 17, category: 'labor', difficulty: 'easy',
+    text: '労働契約法において、無期転換ルールの内容として正しいものはどれか。',
+    options: ['有期労働契約が通算5年を超えた場合、労働者の申込みにより無期労働契約に転換できる', '有期労働契約が通算3年を超えた場合、自動的に無期労働契約となる', '有期労働契約が通算10年を超えた場合、労働者の申込みにより無期転換できる', '無期転換は正社員化を意味し、労働条件も正社員と同一になる'],
+    answer: 0,
+    explanation: '労働契約法18条の無期転換ルール：同一使用者との有期労働契約が通算5年超となった場合、労働者からの申込みにより無期転換。転換後の労働条件は、別段の定めがない限り直前の有期契約と同一です（正社員化ではない）。'
+  },
+
+  // ── 実践・アセスメント ──
+  {
+    id: 18, category: 'practice', difficulty: 'easy',
+    text: 'キャリアコンサルティングのプロセスとして、一般的に最初に行うべきものはどれか。',
+    options: ['関係構築（ラポール形成）', '問題の明確化・目標設定', '具体的な行動計画の立案', 'フォローアップ'],
+    answer: 0,
+    explanation: 'キャリアコンサルティングは①関係構築（ラポール）→②問題の明確化・目標設定→③具体的方策の検討→④行動計画立案→⑤実行→⑥フォローアップ、の流れが基本。信頼関係の構築が土台です。'
+  },
+  {
+    id: 19, category: 'practice', difficulty: 'mid',
+    text: '職業興味検査の一つである「VPI職業興味検査」はどの理論に基づいているか。',
+    options: ['ホランドの職業選択理論（RIASEC）', 'スーパーのライフ・スパン理論', 'クランボルツの社会的学習理論', 'シャインのキャリアアンカー理論'],
+    answer: 0,
+    explanation: 'VPI（Vocational Preference Inventory）はホランドが開発した職業興味検査で、RIASEC（現実的・研究的・芸術的・社会的・企業的・慣習的）の6タイプに基づいて職業興味を測定します。'
+  },
+  {
+    id: 20, category: 'practice', difficulty: 'mid',
+    text: 'キャリアコンサルタントの守秘義務について正しいものはどれか。',
+    options: ['原則として秘密を守る義務があるが、本人の同意がある場合や生命の危険がある場合等は例外となりうる', 'いかなる場合も秘密を守る絶対的義務であり、例外はない', '守秘義務はキャリアコンサルタントの倫理規定にはなく、法律でのみ規定されている', '守秘義務は面談終了後には消滅する'],
+    answer: 0,
+    explanation: '守秘義務は原則として絶対的だが、①本人の同意②本人・第三者の生命・身体への危険③法令による開示義務等の場合は例外。倫理規定と法律（個人情報保護法等）両面から義務付けられています。'
+  },
+  {
+    id: 21, category: 'practice', difficulty: 'hard',
+    text: '包括的・折衷的アプローチにおける「共通要因（Common Factors）」として正しいものはどれか。',
+    options: ['治療的同盟・カタルシス・期待（プラセボ効果）・理論固有のテクニック', '認知の修正・行動変容・感情処理・対人関係の改善', '無意識の探索・解釈・転移の活用・抵抗の分析', '受容・共感・自己一致・無条件の肯定的関心'],
+    answer: 0,
+    explanation: 'ランバートの共通要因モデルでは、どの療法でも共通して効果をもたらす要因として①治療外因子（40%）②治療的関係（30%）③期待・プラセボ（15%）④理論・技法（15%）が挙げられています。'
+  },
+
+  // ── 職業・教育政策 ──
+  {
+    id: 22, category: 'policy', difficulty: 'easy',
+    text: '職業能力開発促進法に基づく公共職業訓練を実施する機関として正しいものはどれか。',
+    options: ['ポリテクセンター（職業能力開発促進センター）・ポリテクカレッジ（職業能力開発大学校）', 'ハローワーク（公共職業安定所）のみ', '民間の職業訓練機関のみ', '大学・専門学校等の高等教育機関のみ'],
+    answer: 0,
+    explanation: '公共職業訓練は、独立行政法人高齢・障害・求職者雇用支援機構が運営するポリテクセンター（離転職者向け）やポリテクカレッジ（専門的訓練）、都道府県立技術専門校等で実施されます。'
+  },
+  {
+    id: 23, category: 'policy', difficulty: 'mid',
+    text: 'キャリアコンサルタントの登録制度について正しいものはどれか。',
+    options: ['名称独占資格であり、5年ごとに更新が必要で、更新には知識講習・技能講習の受講が求められる', '業務独占資格であり、資格なしにキャリアコンサルティング業務を行うことは禁止されている', '更新制度はなく、一度取得すれば生涯有効である', '民間資格であり、法律に基づく公的な登録制度はない'],
+    answer: 0,
+    explanation: 'キャリアコンサルタントは職業能力開発促進法に基づく名称独占の国家資格（2016年〜）。登録有効期間は5年で、更新には知識講習（8時間以上）と技能講習（30時間以上）の受講が必要です。'
+  },
+  {
+    id: 24, category: 'policy', difficulty: 'mid',
+    text: 'セルフ・キャリアドック（企業によるキャリアコンサルティング体制）について正しいものはどれか。',
+    options: ['企業が従業員に対して定期的にキャリアコンサルティングを受ける機会を提供する仕組みで、厚生労働省が普及推進している', '国家資格キャリアコンサルタントのみが実施できる制度で、企業への導入が法律で義務付けられている', '主に新卒採用者を対象とした入社後1年間限定のキャリア支援プログラムである', 'ハローワークを通じてのみ提供されるキャリア相談サービスである'],
+    answer: 0,
+    explanation: 'セルフ・キャリアドックとは、企業が人材育成ビジョン・方針に基づき、キャリアコンサルティング面談と多様なキャリア研修等を組み合わせて、従業員の主体的なキャリア形成を促進・支援する総合的な取組みです。'
+  },
+  {
+    id: 25, category: 'policy', difficulty: 'hard',
+    text: '「2040年を見据えた高等教育のグランドデザイン」（中央教育審議会）において示された学修者本位の高等教育の主要なキーワードとして正しいものはどれか。',
+    options: ['「何を教えるか」から「何を学び、身につけることができるか」への転換・学修成果の可視化', '入学定員の厳格管理と偏差値による大学ランキングの廃止', '全ての大学院大学化と学部教育の廃止', 'グローバル化推進のための英語教育の全面必修化'],
+    answer: 0,
+    explanation: '2018年中教審答申では、教員中心から学修者中心への転換（「教える」→「学び・身につける」）、学修成果・教育成果の可視化、多様性・柔軟性の確保等が主要課題として示されました。'
+  },
+];
+
+// ===================== App State =====================
+let currentQ = null;
+let currentPool = [];
+let qIndex = 0;
+let answered = false;
+let sessionCorrect = 0;
+let sessionTotal = 0;
+let streak = 0;
+let bestStreak = 0;
+let weakIds = JSON.parse(localStorage.getItem('cc_weak') || '[]');
+let resultLog = JSON.parse(localStorage.getItem('cc_log') || '{}');
+
+function saveData() {
+  localStorage.setItem('cc_weak', JSON.stringify(weakIds));
+  localStorage.setItem('cc_log', JSON.stringify(resultLog));
+}
+
+function getPool() {
+  const cat = document.getElementById('category-select').value;
+  const mode = document.getElementById('mode-select').value;
+  let pool = cat === 'all' ? [...questions] : questions.filter(q => q.category === cat);
+  if (mode === 'weak') {
+    const weak = pool.filter(q => weakIds.includes(q.id));
+    if (weak.length > 0) pool = weak;
+  }
+  if (mode === 'random') pool = pool.sort(() => Math.random() - 0.5);
+  return pool;
+}
+
+function startQuiz() {
+  currentPool = getPool();
+  qIndex = 0;
+  sessionCorrect = 0;
+  sessionTotal = 0;
+  streak = 0;
+  document.getElementById('progress-wrap').style.display = 'block';
+  showQuestion();
+}
+
+function showQuestion() {
+  if (qIndex >= currentPool.length) {
+    showScore();
+    return;
+  }
+  currentQ = currentPool[qIndex];
+  answered = false;
+  updateProgress();
+  renderQuestion();
+}
+
+function updateProgress() {
+  const pct = Math.round((qIndex / currentPool.length) * 100);
+  document.getElementById('prog-label').textContent = `問題 ${qIndex + 1} / ${currentPool.length}`;
+  document.getElementById('prog-pct').textContent = pct + '%';
+  document.getElementById('prog-fill').style.width = pct + '%';
+}
+
+function renderQuestion() {
+  const q = currentQ;
+  const catNames = { theory: 'キャリア理論', counseling: 'カウンセリング', labor: '労働法規', practice: '実践', policy: '政策' };
+  const diffNames = { easy: '基礎', mid: '標準', hard: '応用' };
+  const diffClass = { easy: 'difficulty-easy', mid: 'difficulty-mid', hard: 'difficulty-hard' };
+
+  const optionsHtml = q.options.map((opt, i) => `
+    <div class="option" id="opt-${i}" onclick="selectAnswer(${i})">
+      <div class="option-label">${['A','B','C','D'][i]}</div>
+      <div class="option-text">${opt}</div>
+    </div>
+  `).join('');
+
+  document.getElementById('quiz-area').innerHTML = `
+    <div class="q-card">
+      <div class="q-meta">
+        <span class="q-tag category">${catNames[q.category]}</span>
+        <span class="q-tag ${diffClass[q.difficulty]}">${diffNames[q.difficulty]}</span>
+        <span class="q-num">Q${q.id}</span>
+      </div>
+      <div class="q-text">${q.text}</div>
+      <div class="options">${optionsHtml}</div>
+      <div class="result-box" id="result-box"></div>
+      <div class="actions">
+        <button class="btn-secondary" onclick="skipQuestion()">スキップ</button>
+        <button class="btn-primary" id="next-btn" onclick="nextQuestion()" style="display:none">次の問題 →</button>
+      </div>
+    </div>
+  `;
+}
+
+function selectAnswer(selected) {
+  if (answered) return;
+  answered = true;
+  const q = currentQ;
+  const isCorrect = selected === q.answer;
+
+  // Update stats
+  sessionTotal++;
+  if (isCorrect) {
+    sessionCorrect++;
+    streak++;
+    if (streak > bestStreak) bestStreak = streak;
+    weakIds = weakIds.filter(id => id !== q.id);
+  } else {
+    streak = 0;
+    if (!weakIds.includes(q.id)) weakIds.push(q.id);
+  }
+  resultLog[q.id] = isCorrect ? 'correct' : 'wrong';
+  saveData();
+  updateHeaderStats();
+  updateStatsCards();
+
+  // Style options
+  q.options.forEach((_, i) => {
+    const el = document.getElementById(`opt-${i}`);
+    el.classList.add('disabled');
+    if (i === q.answer) el.classList.add('correct');
+    else if (i === selected && !isCorrect) el.classList.add('wrong');
+  });
+
+  // Show result
+  const box = document.getElementById('result-box');
+  box.className = `result-box ${isCorrect ? 'correct' : 'wrong'}`;
+  box.style.display = 'block';
+  box.innerHTML = `
+    <div class="result-title">${isCorrect ? '✅ 正解！' + (streak > 1 ? ` 🔥${streak}連続！` : '') : '❌ 不正解'}</div>
+    <div class="explanation">${q.explanation}</div>
+  `;
+
+  document.getElementById('next-btn').style.display = 'block';
+}
+
+function skipQuestion() {
+  qIndex++;
+  showQuestion();
+}
+
+function nextQuestion() {
+  qIndex++;
+  showQuestion();
+}
+
+function showScore() {
+  document.getElementById('progress-wrap').style.display = 'none';
+  const pct = sessionTotal > 0 ? Math.round((sessionCorrect / sessionTotal) * 100) : 0;
+  const msg = pct >= 80 ? '素晴らしい！' : pct >= 60 ? 'よく頑張りました！' : 'もう少し頑張ろう！';
+  document.getElementById('quiz-area').innerHTML = `
+    <div class="score-screen">
+      <div class="score-circle">
+        <div class="pct">${pct}%</div>
+        <div class="pct-label">正答率</div>
+      </div>
+      <div class="score-msg">${msg}</div>
+      <div class="score-sub">最高連続正解: ${bestStreak}問</div>
+      <div class="score-breakdown">
+        <div class="score-item ok"><div class="num">${sessionCorrect}</div><div class="lbl">正解</div></div>
+        <div class="score-item ng"><div class="num">${sessionTotal - sessionCorrect}</div><div class="lbl">不正解</div></div>
+        <div class="score-item"><div class="num">${sessionTotal}</div><div class="lbl">合計</div></div>
+      </div>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+        <button class="btn-primary" onclick="startQuiz()">もう一度</button>
+        <button class="btn-secondary" onclick="startWeakMode()">苦手問題を復習</button>
+      </div>
+    </div>
+  `;
+}
+
+function startWeakMode() {
+  document.getElementById('mode-select').value = 'weak';
+  startQuiz();
+}
+
+function showStats() {
+  const total = Object.keys(resultLog).length;
+  const correct = Object.values(resultLog).filter(v => v === 'correct').length;
+  const pct = total > 0 ? Math.round(correct / total * 100) : 0;
+  document.getElementById('quiz-area').innerHTML = `
+    <div class="score-screen">
+      <div class="score-circle">
+        <div class="pct">${pct}%</div>
+        <div class="pct-label">累計正答率</div>
+      </div>
+      <div class="score-msg">累計成績</div>
+      <div class="score-breakdown">
+        <div class="score-item ok"><div class="num">${correct}</div><div class="lbl">累計正解</div></div>
+        <div class="score-item ng"><div class="num">${total - correct}</div><div class="lbl">累計不正解</div></div>
+        <div class="score-item"><div class="num">${weakIds.length}</div><div class="lbl">苦手問題数</div></div>
+      </div>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+        <button class="btn-primary" onclick="startQuiz()">学習を始める</button>
+        <button class="btn-secondary" onclick="resetData()" style="color:#ef4444">データリセット</button>
+      </div>
+    </div>
+  `;
+}
+
+function resetData() {
+  if (confirm('全ての学習データをリセットしますか？')) {
+    weakIds = [];
+    resultLog = {};
+    saveData();
+    updateStatsCards();
+    document.getElementById('quiz-area').innerHTML = '';
+  }
+}
+
+function updateHeaderStats() {
+  document.getElementById('hdr-score').textContent = `正解: ${sessionCorrect}`;
+  document.getElementById('hdr-streak').textContent = `🔥 ${streak}連続`;
+}
+
+function updateStatsCards() {
+  const total = Object.keys(resultLog).length;
+  const correct = Object.values(resultLog).filter(v => v === 'correct').length;
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-correct').textContent = correct;
+  document.getElementById('stat-rate').textContent = total > 0 ? Math.round(correct / total * 100) + '%' : '-';
+}
+
+// Init
+updateStatsCards();
+</script>
+</body>
+</html>
